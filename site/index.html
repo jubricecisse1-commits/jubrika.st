@@ -68,7 +68,7 @@
 
   <div class="hero-stage">
     <canvas id="hero-canvas" aria-label="Lunettes JUBRIKA en 3D — faites glisser pour tourner" role="img"></canvas>
-    <img class="hero-fallback" src="img/products/t8-1.webp" alt="Lunettes photochromiques JUBRIKA" hidden>
+    <img class="hero-fallback" src="img/products/t1-1.webp" alt="Lunettes photochromiques T1" hidden>
     <div class="light-toggle" role="group" aria-label="Simuler la lumière">
       <button class="active" data-tint="0" aria-pressed="true">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 21V10l8-6 8 6v11h-5v-6H9v6H4Z" fill="currentColor"/></svg>Intérieur
@@ -92,6 +92,7 @@
 <!-- Ancres -->
 <nav class="anchors" aria-label="Sections">
   <a href="#points-forts">Points forts</a>
+  <a href="#t1">T1 en 360°</a>
   <a href="#photochromique">Photochromique</a>
   <a href="#collection">Collection</a>
   <a href="#premium">Premium</a>
@@ -136,6 +137,47 @@
     <button id="hl-prev" aria-label="Précédent">‹</button>
     <span class="hl-dots" id="hl-dots"></span>
     <button id="hl-next" aria-label="Suivant">›</button>
+  </div>
+</section>
+
+<!-- T1 : vues réelles + 3D -->
+<section class="studio" id="t1">
+  <div class="studio-head">
+    <p class="launch">Nouveau · Filmée en studio</p>
+    <h2 class="section-title">La T1, sous tous les angles.</h2>
+    <p class="band-sub">Faites glisser pour la faire tourner.</p>
+    <div class="seg" role="tablist" aria-label="Type de vue">
+      <button class="active" role="tab" aria-selected="true" data-view="spin">360° réel</button>
+      <button role="tab" aria-selected="false" data-view="model">Modèle 3D</button>
+    </div>
+  </div>
+  <div class="studio-stage">
+    <div class="spin" id="spin" aria-label="Lunettes T1 en rotation à 360°, faites glisser pour tourner" role="img">
+      <img id="spin-img" src="img/t1-360/00.webp" alt="" draggable="false">
+    </div>
+    <canvas id="t1-canvas" hidden aria-label="Lunettes T1 en 3D" role="img"></canvas>
+  </div>
+  <div class="studio-controls">
+    <label class="spin-range" id="spin-ctrl"><span>Angle</span><input type="range" id="spin-range" min="0" max="71" value="0"></label>
+    <div class="light-toggle" id="t1-toggle" role="group" aria-label="Simuler la lumière" hidden>
+      <button class="active" data-tint="0" aria-pressed="true">Intérieur</button>
+      <button data-tint="1" aria-pressed="false">Plein soleil</button>
+    </div>
+  </div>
+
+  <div class="compare-wrap">
+    <h3 class="compare-title">Intérieur ou plein soleil.<br><span>Les mêmes verres, filmés avant et après exposition.</span></h3>
+    <div class="compare" id="compare">
+      <img src="img/t1-360/face-clair.webp" alt="T1 verres clairs, à l’intérieur">
+      <div class="compare-top" id="compare-top"><img src="img/t1-360/face-fonce.webp" alt="T1 verres teintés, au soleil"></div>
+      <div class="compare-line" id="compare-line"></div>
+      <span class="compare-tag left">Intérieur</span><span class="compare-tag right">Plein soleil</span>
+      <input type="range" id="compare-range" min="0" max="100" value="50" aria-label="Comparer intérieur et plein soleil">
+    </div>
+    <div class="hero-links">
+      <a class="pill pill-blue" href="#produit-T1">Acheter la T1 · 7 500 FCFA</a>
+      <a class="text-link" href="#produit-T1">En savoir plus ›</a>
+    </div>
   </div>
 </section>
 

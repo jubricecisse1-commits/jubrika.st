@@ -133,6 +133,114 @@ function buildGlasses(opts) {
   return group;
 }
 
+// Modèle T1 reproduit d'après les photos : sourcil en acétate noir cassé aux extrémités,
+// cerclage métal argent, charnière argent à trois rainures, branches fines à embouts noirs.
+function buildT1() {
+  const group = new THREE.Group();
+  const acetate = new THREE.MeshPhysicalMaterial({ color: '#0b0b0d', roughness: 0.18, metalness: 0, clearcoat: 1, clearcoatRoughness: 0.06 });
+  const silver = new THREE.MeshStandardMaterial({ color: '#d6d8db', metalness: 1, roughness: 0.18 });
+  const padMat = new THREE.MeshPhysicalMaterial({ color: '#ffffff', transparent: true, opacity: 0.45, roughness: 0.08, clearcoat: 1 });
+  const lensMat = new THREE.MeshPhysicalMaterial({
+    color: CLEAR.clone(), transparent: true, opacity: 0.2, roughness: 0.04, metalness: 0,
+    clearcoat: 1, clearcoatRoughness: 0.02, envMapIntensity: 1.6, side: THREE.DoubleSide, depthWrite: false
+  });
+
+  const LW = 5.5, LH = 4.1, LR = 1.0, GAP = 1.8;
+  const a = LW / 2, b = LH / 2, cx = a + GAP / 2;
+  const outline = lensShape(LW, LH, LR, 0).getPoints();
+
+  // Un œil construit avec l'extérieur vers +x, puis copié en miroir pour l'autre côté.
+  function eye() {
+    const g = new THREE.Group();
+
+    // Sourcil : dessus plat, biseau intérieur, angle cassé qui descend vers la charnière.
+    const T = b + 0.32, XI = -a - 0.05, HY = b - 0.62;
+    const top = [
+      new THREE.Vector2(XI, b - 0.45), new THREE.Vector2(XI, b + 0.12), new THREE.Vector2(XI + 0.3, T),
+      new THREE.Vector2(a - 0.75, T), new THREE.Vector2(a + 0.32, b - 0.3), new THREE.Vector2(a + 0.32, HY)
+    ];
+    const under = outline.slice(0, outline.length / 2).filter(p => p.y > HY);
+    const brow = new THREE.ExtrudeGeometry(new THREE.Shape([...top, ...under]), { depth: 0.45, bevelEnabled: true, bevelThickness: 0.07, bevelSize: 0.06, bevelSegments: 4, curveSegments: 12 });
+    brow.translate(0, 0, -0.22);
+    g.add(new THREE.Mesh(brow, acetate));
+
+    // Cerclage métal tout autour du verre
+    const rimPts = lensShape(LW, LH, LR, 0.05).getPoints().map(p => new THREE.Vector3(p.x, p.y, 0.05));
+    g.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(rimPts, true), 220, 0.075, 10, true), silver));
+
+    // Verre bombé
+    const lensGeo = new THREE.ShapeGeometry(lensShape(LW, LH, LR, 0.02), 32);
+    const pos = lensGeo.attributes.position;
+    for (let i = 0; i < pos.count; i++) {
+      const x = pos.getX(i), y = pos.getY(i);
+      pos.setZ(i, 0.12 - (x * x + y * y) * 0.02);
+    }
+    lensGeo.computeVertexNormals();
+    g.add(new THREE.Mesh(lensGeo, lensMat));
+
+    // Charnière : trois joncs argent superposés, petit talon noir dessous
+    const hx = a + 0.38;
+    for (const dy of [0, 0.18, 0.36]) {
+      const ridge = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.085, 1.2, 14), silver);
+      ridge.rotation.x = Math.PI / 2;
+      ridge.position.set(hx, HY - 0.15 - dy, -0.45);
+      g.add(ridge);
+    }
+    const plate = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.5, 1.2), silver);
+    plate.position.set(hx - 0.1, HY - 0.33, -0.45);
+    g.add(plate);
+    const heel = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.24, 0.6), acetate);
+    heel.position.set(hx - 0.05, HY - 0.68, -0.15);
+    g.add(heel);
+
+    // Branche : tige métal fine puis embout acétate qui plonge derrière l'oreille
+    const temple = new THREE.Group();
+    temple.position.set(hx, HY - 0.33, -1.0);
+    temple.rotation.y = -0.05;
+    const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 9.6, 10), silver);
+    rod.rotation.x = Math.PI / 2;
+    rod.position.z = -4.8;
+    temple.add(rod);
+    const tipCurve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(0, 0, -9.4), new THREE.Vector3(0, -0.05, -12.2),
+      new THREE.Vector3(0, -0.7, -13.8), new THREE.Vector3(0, -2.1, -14.8)
+    ]);
+    temple.add(new THREE.Mesh(new THREE.TubeGeometry(tipCurve, 48, 0.15, 12, false), acetate));
+    g.add(temple);
+
+    // Plaquette de nez sur son petit bras métal
+    const arm = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(-a + 0.05, 0.2, -0.05), new THREE.Vector3(-a + 0.35, -0.05, -0.35), new THREE.Vector3(-a + 0.55, -0.2, -0.6)
+    ]);
+    g.add(new THREE.Mesh(new THREE.TubeGeometry(arm, 12, 0.035, 6, false), silver));
+    const pad = new THREE.Mesh(new THREE.SphereGeometry(0.4, 20, 14), padMat);
+    pad.scale.set(0.38, 1, 0.22);
+    pad.position.set(-a + 0.62, -0.45, -0.68);
+    pad.rotation.z = 0.35;
+    g.add(pad);
+    return g;
+  }
+
+  const right = eye();
+  right.position.x = cx;
+  right.rotation.y = -0.06;
+  const left = eye();
+  left.scale.x = -1;
+  left.position.x = -cx;
+  left.rotation.y = 0.06;
+  group.add(right, left);
+
+  // Pont métal légèrement cintré
+  const bx = cx - a + 0.15;
+  const bridge = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(-bx, b - 0.3, 0.02), new THREE.Vector3(0, b - 0.12, 0.12), new THREE.Vector3(bx, b - 0.3, 0.02)
+  ]);
+  group.add(new THREE.Mesh(new THREE.TubeGeometry(bridge, 24, 0.09, 10, false), silver));
+
+  group.userData.lensMat = lensMat;
+  return group;
+}
+
 function shadowTexture() {
   const c = document.createElement('canvas');
   c.width = c.height = 256;
@@ -167,7 +275,7 @@ export function createGlasses(canvas, opts = {}) {
   scene.add(key);
 
   const camera = new THREE.PerspectiveCamera(28, 1, 0.1, 200);
-  const glasses = buildGlasses(opts);
+  const glasses = opts.model === 't1' ? buildT1() : buildGlasses(opts);
   const pivot = new THREE.Group();
   glasses.position.z = 4.5; // centre de rotation vers le milieu des branches
   pivot.add(glasses);

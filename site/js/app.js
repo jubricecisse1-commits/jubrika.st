@@ -61,6 +61,7 @@ const storySection = $('#photochromique');
 const steps = $$('.story-steps .step');
 const uvFill = $('#uv-fill');
 let story = null;
+let t1Model = null;
 
 function storyProgress() {
   const r = storySection.getBoundingClientRect();
@@ -84,18 +85,68 @@ onStoryScroll();
 
 import('./glasses3d.js').then(({ createGlasses, webglAvailable }) => {
   if (!webglAvailable()) throw new Error('webgl');
-  const hero = createGlasses($('#hero-canvas'), { rotationY: -0.6, rotationX: 0.14 });
+  const hero = createGlasses($('#hero-canvas'), { model: 't1', rotationY: -0.6, rotationX: 0.14 });
   $$('.light-toggle button').forEach(b => b.addEventListener('click', () => {
     $$('.light-toggle button').forEach(x => { x.classList.toggle('active', x === b); x.setAttribute('aria-pressed', x === b); });
     hero.setTint(Number(b.dataset.tint));
   }));
-  story = createGlasses($('#story-canvas'), { autoRotate: false, interactive: false, tintSpeed: 5, rotationY: -0.6 });
+  story = createGlasses($('#story-canvas'), { model: 't1', autoRotate: false, interactive: false, tintSpeed: 5, rotationY: -0.6 });
+  t1Model = () => createGlasses($('#t1-canvas'), { model: 't1', rotationY: -0.6, rotationX: 0.12 });
   onStoryScroll();
 }).catch(() => {
   // Pas de WebGL : on affiche des photos à la place des scènes 3D.
   $('#hero-canvas').hidden = true; $('.hero-fallback').hidden = false;
   $('.light-toggle').hidden = true; $('.drag-hint').hidden = true;
   $('#story-canvas').hidden = true; $('.story-fallback').hidden = false;
+  $('.seg').hidden = true;
+});
+
+/* ---------- T1 : 360° réel ---------- */
+const SPIN_FRAMES = 72;
+const spin = $('#spin'), spinImg = $('#spin-img'), spinRange = $('#spin-range');
+const frames = Array.from({ length: SPIN_FRAMES }, (_, i) => `img/t1-360/${String(i).padStart(2, '0')}.webp`);
+let spinIndex = 0, spinTouched = false;
+function showFrame(i) {
+  spinIndex = ((Math.round(i) % SPIN_FRAMES) + SPIN_FRAMES) % SPIN_FRAMES;
+  spinImg.src = frames[spinIndex];
+  spinRange.value = spinIndex;
+}
+// Précharge toutes les vues pour une rotation fluide
+frames.forEach(src => { const im = new Image(); im.src = src; });
+let dragX = null, dragStart = 0;
+spin.addEventListener('pointerdown', e => { dragX = e.clientX; dragStart = spinIndex; spinTouched = true; spin.setPointerCapture(e.pointerId); spin.classList.add('grabbing'); });
+spin.addEventListener('pointermove', e => { if (dragX !== null) showFrame(dragStart - (e.clientX - dragX) / 8); });
+const endDrag = () => { dragX = null; spin.classList.remove('grabbing'); };
+spin.addEventListener('pointerup', endDrag);
+spin.addEventListener('pointercancel', endDrag);
+spinRange.addEventListener('input', () => { spinTouched = true; showFrame(Number(spinRange.value)); });
+// Tourne doucement tout seul tant que personne n'y a touché
+let spinVisible = false;
+new IntersectionObserver(([e]) => { spinVisible = e.isIntersecting; }).observe(spin);
+if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  setInterval(() => { if (spinVisible && !spinTouched && !spin.hidden) showFrame(spinIndex + 1); }, 90);
+}
+
+// Bascule 360° réel / modèle 3D
+let t1Created = null;
+$$('.seg button').forEach(b => b.addEventListener('click', () => {
+  const model = b.dataset.view === 'model';
+  $$('.seg button').forEach(x => { x.classList.toggle('active', x === b); x.setAttribute('aria-selected', x === b); });
+  spin.hidden = model; $('#spin-ctrl').hidden = model;
+  $('#t1-canvas').hidden = !model; $('#t1-toggle').hidden = !model;
+  if (model && !t1Created && t1Model) t1Created = t1Model();
+}));
+$$('#t1-toggle button').forEach(b => b.addEventListener('click', () => {
+  $$('#t1-toggle button').forEach(x => { x.classList.toggle('active', x === b); x.setAttribute('aria-pressed', x === b); });
+  t1Created?.setTint(Number(b.dataset.tint));
+}));
+
+// Avant / après
+const compareRange = $('#compare-range');
+compareRange.addEventListener('input', () => {
+  const v = compareRange.value;
+  $('#compare-top').style.clipPath = `inset(0 0 0 ${v}%)`;
+  $('#compare-line').style.left = v + '%';
 });
 
 /* ---------- Toast ---------- */
